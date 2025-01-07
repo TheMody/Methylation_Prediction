@@ -1,0 +1,23 @@
+cell_types = ['AT2 cell','Antigen presenting cell (RPS high)' ,'Astrocyte', 'B cell',
+ 'B cell (Plasmocyte)', 'Basal cell', 'CB CD34+' ,'Chondrocyte',
+ 'Dendritic cell' ,'Endothelial cell', 'Endothelial cell (APC)',
+ 'Endothelial cell (endothelial to mesenchymal transition)' ,'Enterocyte',
+ 'Enterocyte progenitor', 'Epithelial cell',
+ 'Epithelial cell (intermediated)' ,'Erythroid cell',
+ 'Erythroid progenitor cell (RP high)' ,'Fasciculata cell', 'Fetal Neuron',
+ 'Fetal acinar cell' ,'Fetal chondrocyte', 'Fetal endocrine cell',
+ 'Fetal enterocyte ' ,'Fetal epithelial progenitor', 'Fetal fibroblast',
+ 'Fetal mesenchymal progenitor', 'Fetal neuron',
+ 'Fetal skeletal muscle cell' ,'Fetal stromal cell' ,'Fibroblast',
+ 'Gastric endocrine cell', 'Goblet cell' ,'Hepatocyte/Endodermal cell',
+ 'Immature sertoli cell (Pre-Sertoli cell)', 'Intercalated cell',
+ 'Intermediated cell', 'Kidney intercalated cell', 'Loop of Henle',
+ 'M2 Macrophage', 'Macrophage' ,'Mast cell' ,'Mesothelial cell', 'Monocyte',
+ 'Myeloid cell' ,'Neutrophil' ,'Neutrophil (RPS high)',
+ 'Pancreas exocrine cell', 'Primordial germ cell', 'Proliferating T cell',
+ 'Proximal tubule progenitor', 'Sinusoidal endothelial cell',
+ 'Smooth muscle cell' ,'Stratified epithelial cell' ,'Stromal cell' ,'T cell',
+ 'Ureteric bud cell', 'Ventricle cardiomyocyte', 'hESC']
+organ_major = ['bone_marrow' ,'brain' ,'immune', 'kidney' ,'large_intestine', 'liver', 'lung',
+ 'pancreas' ,'placenta' ,'spleen']
+Num_ids = 25426
