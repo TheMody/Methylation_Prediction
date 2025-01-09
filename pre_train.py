@@ -10,8 +10,13 @@ from tqdm import tqdm
 import math
 
 def pre_train(hyperparameters):
+    batch_size = 32
     if hyperparameters["model_type"] == "transformer":
         model = EncoderModelPreTrain(num_classes=num_inputs, num_tokens=num_inputs, hidden_dim=hyperparameters["dim_hidden"], n_layers=hyperparameters["num_blocks"], compression=hyperparameters["compression"])
+        if hyperparameters["dim_hidden"] * hyperparameters["num_blocks"] >= 2048:
+            batch_size = 16
+        if hyperparameters["compression"] <= 16:
+            batch_size = 8
     if hyperparameters["model_type"] == "mlp":
         model = MethylMLP(num_classes=num_inputs, num_inputs=num_inputs, num_lin_blocks=hyperparameters["num_blocks"], hidden_dim=hyperparameters["dim_hidden"])
     model = model.to(device)
@@ -20,7 +25,7 @@ def pre_train(hyperparameters):
 
     optimizer = torch.optim.Adam(model.parameters(), lr=hyperparameters["lr"])
     dataset = Methylation_ds(name = "GPL8490", interesting_values=[])
-    split = int(0.9 * len(dataset))
+    split = int(0.95 * len(dataset))
     
     train_dataset, val_dataset = torch.utils.data.random_split(dataset, [split, len(dataset) - split], generator=torch.Generator().manual_seed(seed))
     dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)

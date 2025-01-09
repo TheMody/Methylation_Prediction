@@ -11,9 +11,14 @@ from tqdm import tqdm
 import math
 
 def train(hyperparameters,model = None):
+    batch_size = 32
     if model is None:
         if hyperparameters["model_type"] == "transformer":
             model = EncoderModelPreTrain(num_classes=num_classes, num_tokens=num_inputs, hidden_dim=hyperparameters["dim_hidden"], n_layers=hyperparameters["num_blocks"], compression=hyperparameters["compression"])
+            if hyperparameters["dim_hidden"] * hyperparameters["num_blocks"] >= 2048:
+                batch_size = 16
+            if hyperparameters["compression"] <= 16:
+                batch_size = 8
         if hyperparameters["model_type"] == "mlp":
             model = MethylMLP(num_classes=num_classes, num_inputs=num_inputs, num_lin_blocks=hyperparameters["num_blocks"], hidden_dim=hyperparameters["dim_hidden"])
     model = model.to(device)
@@ -31,6 +36,8 @@ def train(hyperparameters,model = None):
     wandb.init(project="methyl_cls", config=config)
     loss_avg = 0.0
     accuracy_avg = 0.0
+    best_val_loss = 1e10
+    best_val_acc = 0.0  
     with tqdm(total=math.ceil(len(train_dataset)/batch_size) *hyperparameters["epochs_cls"]) as pbar:
         model.train()
         for epoch in range(hyperparameters["epochs_cls"]):
@@ -80,10 +87,17 @@ def train(hyperparameters,model = None):
             
             val_acc /= len(val_dataloader)
             val_loss /= len(val_dataloader)
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+            if val_acc > best_val_acc:
+                best_val_acc = val_acc
             log_dict["val_loss_cls"] = val_loss 
             log_dict["val_accuracy"] = val_acc
             wandb.log(log_dict)
             print(f"Validation Loss: {val_loss}, Validation Accuracy: {val_acc}")
+    wandb.finish()
+
+    return best_val_acc
 
 if __name__ == "__main__":
     hyperparameters = {

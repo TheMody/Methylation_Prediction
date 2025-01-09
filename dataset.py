@@ -15,7 +15,7 @@ def preprocess_ds(name, interesting_values ):
     root = tree.getroot()
 
     samples = []
-    interesting_values =interesting_values#["disease"]#["gender", "age", "diseasestatus"]"gender","gender", "age", 
+    interesting_values =interesting_values#["disease"]
 
     for child in root:
         sample = {}
