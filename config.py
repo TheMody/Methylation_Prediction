@@ -1,23 +1,44 @@
 import torch
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")   
-lr = 1e-4
-epochs = 10
+
+#tunable hyperparameters
+
+# lr = 1e-4
+# lr_cls = 1e-4
+
+# epochs_cls = 100
+# dim_hidden = 256
+# num_blocks = 4
+# compression = 32
+# model_type  = "transformer"
+# mask_ratio = 0.15
+
+#non tunable hyperparamters
 batch_size = 32
-dim_hidden = 256
-num_classes = [3]
-num_inputs = 27578
-num_blocks = 4
-compression = 32
-model_type  = "mlp"
+num_classes = 3
+pad_size = 27584
+num_inputs = pad_size
+num_inputs_original = 27578
+seed = 99
+epochs = 10
+
 config = {
-    'device': device,
-    'lr': lr,
+
+    # 'lr': lr,
+    # 
+    # 'dim_hidden': dim_hidden,
+    # 'num_blocks': num_blocks,
+    # 'compression': compression,
+    # 'model_type': model_type,
+    # 'mask_ratio': mask_ratio,
+    # "epochs_cls": epochs_cls,
+    # "lr_cls": lr_cls,
+
     'epochs': epochs,
-    'batch_size': batch_size,
-    'dim_hidden': dim_hidden,
+    "pad_size": pad_size,
+    'seed': seed,
+    'device': device,
     'num_classes': num_classes,
     'num_inputs': num_inputs,
-    'num_blocks': num_blocks,
-    'compression': compression,
-    'model_type': model_type
+    'batch_size': batch_size,
 }

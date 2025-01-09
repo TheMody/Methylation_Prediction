@@ -35,41 +35,53 @@ class MultichannelLinear(nn.Module): #maybe this is missing the bias term
         return x
 
 class MethylMLP(nn.Module): 
-    def __init__(self, num_classes, num_inputs, num_lin_blocks = num_blocks, hidden_dim = dim_hidden):
+    def __init__(self, num_classes, num_inputs, num_lin_blocks, hidden_dim ):
         super().__init__()
         self.input = nn.Linear(num_inputs, hidden_dim)
         self.linears = nn.ModuleList([nn.Linear(hidden_dim, hidden_dim) for _ in range(num_lin_blocks*2)])
-        self.outs = nn.ModuleList([nn.Linear(hidden_dim, c) for c in num_classes])
-       # self.out = nn.Linear(hidden_dim, num_classes)
+       # self.out = nn.ModuleList([nn.Linear(hidden_dim, c) for c in num_classes])
+        self.out_emb = nn.Linear(hidden_dim, num_inputs)
+        self.out = nn.Linear(hidden_dim, num_classes)
 
-    def forward(self, x):
+    def forward(self, x, cls = False):
         x = F.gelu(self.input(x))
         for i in range(len(self.linears)//2):
             x2 = x
             x = F.gelu(self.linears[i*2](x))
             x = F.gelu(self.linears[i*2+1](x)) +x2
-        return [out(x) for out in self.outs]
+
+        
+        if cls:
+            return self.out(x)
+        else:
+            return torch.nn.functional.sigmoid(self.out_emb(x))
 
 class EncoderModelPreTrain(nn.Module):
     #input should be (batchsize, num_pcas, dim_pcas)
-    def __init__(self, num_classes, num_tokens, hidden_dim = dim_hidden,n_layers = num_blocks):
+    def __init__(self, num_classes, num_tokens, hidden_dim ,n_layers , compression):
         super().__init__()
         
         self.EmbeddingLayer = MultichannelLinear(num_tokens, 1, hidden_dim,compression)
         self.module_list = nn.ModuleList([nn.TransformerEncoderLayer(d_model=hidden_dim, nhead=hidden_dim//64,dim_feedforward=4*hidden_dim, batch_first=True, activation='gelu') for i in range(n_layers)])
         self.classification_token = nn.Parameter(torch.Tensor(hidden_dim), requires_grad=True)
         nn.init.uniform_(self.classification_token, a=-1/math.sqrt(hidden_dim), b=1/math.sqrt(hidden_dim))
-        self.outs = nn.ModuleList([nn.Linear(hidden_dim, c) for c in num_classes])
+        #self.outs = nn.ModuleList([nn.Linear(hidden_dim, c) for c in num_classes])
+        self.out = nn.Linear(hidden_dim, num_classes)
+        self.DeEmbeddingLayer = MultichannelLinear(num_tokens//compression, hidden_dim, 1,compression, up = True)
 
 
-    def forward(self, x):
+    def forward(self, x, cls = False):
         x = self.EmbeddingLayer(x.unsqueeze(-1))
 
-        classification_token = torch.stack([self.classification_token.unsqueeze(0) for _ in range(x.shape[0])])
-        x = torch.cat((classification_token,x),dim = 1)
+        if cls:
+            classification_token = torch.stack([self.classification_token.unsqueeze(0) for _ in range(x.shape[0])])
+            x = torch.cat((classification_token,x),dim = 1)
 
         for layer in self.module_list:
             x = layer(x)
     
-        classification_token = x[:,0,:]
-        return [out(classification_token) for out in self.outs]
+        if cls:
+            classification_token = x[:,0,:]
+            return self.out(classification_token)
+        else:
+            return torch.nn.functional.sigmoid(self.DeEmbeddingLayer(x)).squeeze(-1)
