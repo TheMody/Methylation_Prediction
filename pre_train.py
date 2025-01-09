@@ -13,7 +13,7 @@ def pre_train(hyperparameters):
     batch_size = 32
     if hyperparameters["model_type"] == "transformer":
         model = EncoderModelPreTrain(num_classes=num_inputs, num_tokens=num_inputs, hidden_dim=hyperparameters["dim_hidden"], n_layers=hyperparameters["num_blocks"], compression=hyperparameters["compression"])
-        if hyperparameters["dim_hidden"] * hyperparameters["num_blocks"] >= 2048:
+        if hyperparameters["dim_hidden"] * hyperparameters["num_blocks"] >= 3000:
             batch_size = 16
         if hyperparameters["compression"] <= 16:
             batch_size = 8

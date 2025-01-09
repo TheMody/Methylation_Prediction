@@ -1,11 +1,9 @@
 import torch
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")   
 
-#tunable hyperparameters
-
+#tunable hyperparameters (now they are getting set with optuna)
 # lr = 1e-4
 # lr_cls = 1e-4
-
 # epochs_cls = 100
 # dim_hidden = 256
 # num_blocks = 4
@@ -23,9 +21,7 @@ seed = 99
 epochs = 10
 
 config = {
-
     # 'lr': lr,
-    # 
     # 'dim_hidden': dim_hidden,
     # 'num_blocks': num_blocks,
     # 'compression': compression,
@@ -33,7 +29,6 @@ config = {
     # 'mask_ratio': mask_ratio,
     # "epochs_cls": epochs_cls,
     # "lr_cls": lr_cls,
-
     'epochs': epochs,
     "pad_size": pad_size,
     'seed': seed,
