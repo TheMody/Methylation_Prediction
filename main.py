@@ -2,7 +2,8 @@ from train import train
 from pre_train import pre_train
 import optuna
 import pickle
-
+from config import folder
+import os
 if __name__ == "__main__":
     def objective(trial):
         hyperparameters = {
@@ -20,9 +21,11 @@ if __name__ == "__main__":
         model = pre_train(hyperparameters)
         scores = train(hyperparameters,model )
         return scores
+    os.makedirs(folder, exist_ok=True)
     study = optuna.create_study(direction="maximize")
     study.optimize(objective, n_trials=100)
-    with open("sampler.pkl", "wb") as fout:
-        pickle.dump(study.sampler, fout)
     print(study.best_params)
     print(study.best_value)
+    with open(folder+"/"+"sampler.pkl", "wb") as fout:
+        pickle.dump(study.sampler, fout)
+

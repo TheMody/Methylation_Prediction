@@ -19,6 +19,7 @@ num_inputs = pad_size
 num_inputs_original = 27578
 seed = 99
 epochs = 10
+folder = "experiment_1"
 
 config = {
     # 'lr': lr,

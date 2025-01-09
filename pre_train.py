@@ -80,13 +80,13 @@ def pre_train(hyperparameters):
             wandb.log(log_dict)
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
-                torch.save(uncompiled_model.state_dict(), "best_model.pth")
+                torch.save(uncompiled_model.state_dict(), folder+"/best_model.pth")
                 print(f"Validation Loss: {val_loss}, Model saved")
             else:
                 print(f"Validation Loss: {val_loss}")
 
     #load the best model saved during training
-    uncompiled_model.load_state_dict(torch.load("best_model.pth",weights_only=True))
+    uncompiled_model.load_state_dict(torch.load(folder+"/best_model.pth",weights_only=True))
     return uncompiled_model
 
 if __name__ == "__main__":
@@ -95,7 +95,7 @@ if __name__ == "__main__":
         "dim_hidden": 256,
         "num_blocks": 4,
         "compression": 32,
-        "model_type": "transformer",
+        "model_type": "mlp",
         "mask_ratio": 0.15,
         "epochs": 10,
     }
