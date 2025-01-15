@@ -26,6 +26,6 @@ if __name__ == "__main__":
     study.optimize(objective, n_trials=100)
     print(study.best_params)
     print(study.best_value)
-    with open(folder+"/"+"sampler.pkl", "wb") as fout:
+    with open(folder+"/sampler.pkl", "wb") as fout:
         pickle.dump(study.sampler, fout)
 

@@ -26,7 +26,7 @@ def preprocess_ds(name, interesting_values ):
                         if "Characteristics" in char.tag:
                             for value in interesting_values:
                                 if value in char.attrib["tag"]:
-                                    sample[value] = int(char.text.strip())
+                                    sample[value] = char.text.strip()
             if len(sample) == len(interesting_values) + 1:
                 samples.append(sample)
     #check if all ids really exists
@@ -34,16 +34,14 @@ def preprocess_ds(name, interesting_values ):
     #check for datapoints which are for some reason not the expected length of 27578
     samples =[sample for sample in samples if (len(open(dataset_path + "/" + sample["id"] + "-tbl-1.txt").readlines())== num_inputs_original)]
     print("length of dataset after filtering", len(samples))
+    strtoindex = {}
+    for value in interesting_values:
+        strtoindex[value] = np.unique([sample[value] for sample in samples]).tolist()
+        print(strtoindex[value])
 
-
-   # strtoindex = {}
-    # for value in interesting_values:
-    #     strtoindex[value] = np.unique([sample[value] for sample in samples]).tolist()
-    #     print(strtoindex[value])
-
-    # for sample in samples:
-    #     for value in interesting_values:
-    #         sample[value] = strtoindex[value].index(sample[value])
+    for sample in samples:
+        for value in interesting_values:
+            sample[value] = strtoindex[value].index(sample[value])
 
     #save samples using pickle:
     with open("methylation_data/"+name+"_family.pkl", "wb") as f:
@@ -91,11 +89,11 @@ class Methylation_ds(torch.utils.data.Dataset):
         #print(x.shape)
         if len(self.interesting_values) == 0:
             return x, torch.tensor(0, dtype=torch.long)
-        return x, torch.tensor(self.samples[idx][self.interesting_values[0]], dtype=torch.float32)#torch.tensor(self.samples[idx][self.interesting_values[0]], dtype=torch.long) 
+        return x, torch.tensor(self.samples[idx][self.interesting_values[0]], dtype=torch.long) 
 
 
 if __name__ == "__main__":
-    ds = Methylation_ds(name = "GSE27317", interesting_values=["maternal age"])
+    ds = Methylation_ds()
  #   print(len(ds))
 
 
@@ -113,23 +111,22 @@ if __name__ == "__main__":
 
     x = np.stack(x)
     y = np.stack(y)
-
-    print("variance of age",np.mean(np.abs(y-np.mean(y))))
+    # x = x[:100]
+    # y = y[:100]
 
     from utils import crossvalidate
     reg = LinearRegression()
-
     print("crossvalidated accuracy linear regression:",crossvalidate(reg, x, y))
 
-    # reg = LogisticRegression()
-    # print("crossvalidated accuracy logistic regression:",crossvalidate(reg, x, y))
+    reg = LogisticRegression()
+    print("crossvalidated accuracy logistic regression:",crossvalidate(reg, x, y))
 
 
-    # #calculate proportions of each class
-    # ys = [0,0,0]
-    # for x,y in ds:
-    #     ys[y[0]] += 1
-    # print(ys)
-    # print([y/len(ds) for y in ys])
+    #calculate proportions of each class
+    ys = [0,0,0]
+    for x,y in ds:
+        ys[y[0]] += 1
+    print(ys)
+    print([y/len(ds) for y in ys])
         
         
