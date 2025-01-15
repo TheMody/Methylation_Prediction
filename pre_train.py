@@ -12,12 +12,6 @@ import math
 def pre_train(hyperparameters):
     if hyperparameters["model_type"] == "transformer":
         model = xtransformer(num_classes=num_classes, num_tokens=num_inputs, hidden_dim=hyperparameters["dim_hidden"], n_layers=hyperparameters["num_blocks"], compression=hyperparameters["compression"])
-        # if hyperparameters["dim_hidden"] * hyperparameters["num_blocks"] >= 3000:
-        #     batch_size = 16
-        #     gradient_accumulation_steps = 2
-        # if hyperparameters["compression"] <= 16:
-        #     batch_size = 8
-        #     gradient_accumulation_steps = 4
     model = model.to(device)
     uncompiled_model = model
 
@@ -29,7 +23,7 @@ def pre_train(hyperparameters):
     dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
 
-    scheduler = CosineWarmupScheduler(optimizer, warmup=500, max_iters=math.ceil(len(train_dataset)/batch_size) *epochs)
+    scheduler = CosineWarmupScheduler(optimizer, warmup=500, max_iters=math.ceil(len(train_dataset)/(batch_size*gradient_accumulation_steps)) *epochs)
     wandb.init(project="methyl_cls_pretrain", config=config)
     print(hyperparameters)
     loss_avg = 0.0

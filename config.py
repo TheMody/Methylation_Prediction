@@ -23,14 +23,6 @@ epochs = 10
 folder = "experiment_1"
 
 config = {
-    # 'lr': lr,
-    # 'dim_hidden': dim_hidden,
-    # 'num_blocks': num_blocks,
-    # 'compression': compression,
-    # 'model_type': model_type,
-    # 'mask_ratio': mask_ratio,
-    # "epochs_cls": epochs_cls,
-    # "lr_cls": lr_cls,
     'epochs': epochs,
     "pad_size": pad_size,
     'seed': seed,
@@ -38,4 +30,5 @@ config = {
     'num_classes': num_classes,
     'num_inputs': num_inputs,
     'batch_size': batch_size,
+    "gradient_accumulation_steps": gradient_accumulation_steps,
 }

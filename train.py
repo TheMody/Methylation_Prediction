@@ -34,9 +34,6 @@ def lin_reg_baseline(ds, val_ds):
     y = np.stack(y)
 
     y_pred = reg.predict(x)
-    # print(y_pred)
-    # print(np.round(y_pred))
-    # print(y)
     acc = np.sum(np.round(y_pred) == y)/len(y)
     print("linear accuracy on this split", acc)
 
@@ -68,7 +65,7 @@ def train(hyperparameters,model = None):
     dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
 
-    scheduler = CosineWarmupScheduler(optimizer, warmup=100, max_iters=math.ceil(len(train_dataset)/batch_size) *hyperparameters["epochs_cls"])
+    scheduler = CosineWarmupScheduler(optimizer, warmup=100, max_iters=math.ceil(len(train_dataset)/(batch_size*gradient_accumulation_steps)) *hyperparameters["epochs_cls"])
     wandb.init(project="methyl_cls", config=config)
 
     print(hyperparameters)
