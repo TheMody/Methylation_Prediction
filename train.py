@@ -41,19 +41,20 @@ def lin_reg_baseline(ds, val_ds):
     print("linear accuracy on this split", acc)
 
 def train(hyperparameters,model = None):
+    frozen = True
     if model is None:
+        frozen = False
         if hyperparameters["model_type"] == "transformer":
             model = xtransformer(num_classes=num_classes, num_tokens=num_inputs, hidden_dim=hyperparameters["dim_hidden"], n_layers=hyperparameters["num_blocks"], compression=hyperparameters["compression"])
-            # if hyperparameters["dim_hidden"] * hyperparameters["num_blocks"] >= 2048:
-            #     batch_size = 16
-            # if hyperparameters["dim_hidden"] * hyperparameters["num_blocks"] >= 8096:
-            #     batch_size = 8
-            # if hyperparameters["compression"] <= 16:
-            #     batch_size = 8
         if hyperparameters["model_type"] == "mlp":
             model = MethylMLP(num_classes=num_classes, num_inputs=num_inputs, num_lin_blocks=hyperparameters["num_blocks"], hidden_dim=hyperparameters["dim_hidden"])
     model = model.to(device)
 
+    #freeze all parameters except the last layer
+    if frozen:
+        for name, param in model.named_parameters():
+            if name != "out.weight" and name != "out.bias" and "classification_token" not in name:
+                param.requires_grad = False 
     optimizer = torch.optim.Adam(model.parameters(), lr=hyperparameters["lr_cls"])
     criterion = torch.nn.CrossEntropyLoss()
     dataset = Methylation_ds()
@@ -75,32 +76,41 @@ def train(hyperparameters,model = None):
     accuracy_avg = 0.0
     best_val_loss = 1e10
     best_val_acc = 0.0  
-    with tqdm(total=math.ceil(len(train_dataset)/batch_size) *hyperparameters["epochs_cls"]) as pbar:
-        model.train()
+    with tqdm(total=math.ceil(len(train_dataset)/(batch_size*gradient_accumulation_steps)) *hyperparameters["epochs_cls"]) as pbar:
         for epoch in range(hyperparameters["epochs_cls"]):
-            for _, (x, y) in enumerate(dataloader):
+            if epoch > 2 and frozen:
+                for name, param in model.named_parameters():
+                    param.requires_grad = True
+                frozen = False
+            model.train()
+            train_iter = iter(dataloader)
+            for step in range(len(dataloader)//gradient_accumulation_steps):
+                accloss = 0.0
                 start = time.time()
-                x = x.to(device)
-                y = y.to(device)
-
                 optimizer.zero_grad()
-                y_pred = model(x, cls = True)
-               # print(y_pred)
 
-                loss = criterion(y_pred, y)
-                loss.backward()
+                for micro_step in range(gradient_accumulation_steps):
+                    x,y = next(train_iter)
+                    x = x.to(device)
+                    y = y.to(device)
+                    y_pred = model(x, cls = True)
+                    loss = criterion(y_pred, y)
+                    loss = loss/ gradient_accumulation_steps
+                    accloss += loss.item()
+                    loss.backward()
+
                 optimizer.step()
                 scheduler.step()
 
                 log_dict = {}
                 avg_acc = y_pred.argmax(dim=1).eq(y).sum().item() / len(y)
                 log_dict["accuracy"] = avg_acc
-                log_dict["loss_cls"] = loss.item()
+                log_dict["loss_cls"] = accloss
                 log_dict["time_per_step_cls"] = time.time() - start
                 log_dict["lr_cls"] = optimizer.param_groups[0]["lr"]
 
                 wandb.log(log_dict)
-                loss_avg = 0.99 * loss_avg + 0.01 * loss.item()
+                loss_avg = 0.99 * loss_avg + 0.01 * accloss
                 accuracy_avg = 0.99 * accuracy_avg + 0.01 * avg_acc
                 loss_avg_corrected = loss_avg / (1 - 0.99**(pbar.n+1))
                 accuracy_avg_corrected = accuracy_avg / (1 - 0.99**(pbar.n+1))
@@ -138,13 +148,14 @@ def train(hyperparameters,model = None):
     return best_val_acc
 
 if __name__ == "__main__":
+    
     hyperparameters = {
-        "lr_cls": 1e-4,
+        "lr_cls": 2e-5,
         "epochs_cls": 100,
         "dim_hidden": 256,
         "num_blocks": 4,
         "compression": 32,
-        "model_type": "xtransformer",
+        "model_type": "transformer",
     }
     train(hyperparameters)
 

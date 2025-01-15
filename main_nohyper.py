@@ -11,7 +11,6 @@ if __name__ == "__main__":
         "lr_cls": 2e-5,
         "lr": 8e-5,
         "epochs_cls": 100,
-        "epochs": 1,
         "dim_hidden": 256,
         "num_blocks": 4,
         "compression": 32,

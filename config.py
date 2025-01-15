@@ -12,8 +12,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # mask_ratio = 0.15
 
 #non tunable hyperparamters
-batch_size = 16
-gradient_accumulation_steps = 2
+batch_size = 32
+gradient_accumulation_steps = 1
 num_classes = 3
 pad_size = 27584
 num_inputs = pad_size
