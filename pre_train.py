@@ -23,7 +23,7 @@ def pre_train(hyperparameters):
     dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
 
-    scheduler = CosineWarmupScheduler(optimizer, warmup=500, max_iters=math.ceil(len(train_dataset)/(batch_size*gradient_accumulation_steps)) *hyperparameters["epochs"])
+    scheduler = CosineWarmupScheduler(optimizer, warmup=300, max_iters=math.ceil(len(train_dataset)/(batch_size*gradient_accumulation_steps)) *hyperparameters["epochs"])
     wandb.init(project="methyl_cls_pretrain", config=config)
     print(hyperparameters)
     loss_avg = 0.0

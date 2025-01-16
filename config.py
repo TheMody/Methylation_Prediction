@@ -29,5 +29,7 @@ config = {
     'num_classes': num_classes,
     'num_inputs': num_inputs,
     'batch_size': batch_size,
+    "batch_size_cls": batch_size_cls,
     "gradient_accumulation_steps": gradient_accumulation_steps,
+    "folder": folder,
 }
