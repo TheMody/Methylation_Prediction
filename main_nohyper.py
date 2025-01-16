@@ -16,6 +16,7 @@ if __name__ == "__main__":
         "compression": 32,
         "model_type": "transformer",
         "mask_ratio": 0.15,
+        "epochs":  10,
         }
     model = pre_train(hyperparameters)
     scores = train(hyperparameters,model )

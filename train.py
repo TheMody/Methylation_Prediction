@@ -55,17 +55,17 @@ def train(hyperparameters,model = None):
     optimizer = torch.optim.Adam(model.parameters(), lr=hyperparameters["lr_cls"])
     criterion = torch.nn.CrossEntropyLoss()
     dataset = Methylation_ds()
-    split = int(0.8 * len(dataset))
+    split = int(0.1 * len(dataset))
     
     train_dataset, val_dataset = torch.utils.data.random_split(dataset, [split, len(dataset) - split], generator=torch.Generator().manual_seed(seed))
 
     #lin regression baseline
     lin_reg_baseline(train_dataset, val_dataset)
 
-    dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
+    dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size_cls, shuffle=True, num_workers=4)
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size_cls, shuffle=False, num_workers=4)
 
-    scheduler = CosineWarmupScheduler(optimizer, warmup=100, max_iters=math.ceil(len(train_dataset)/(batch_size*gradient_accumulation_steps)) *hyperparameters["epochs_cls"])
+    scheduler = CosineWarmupScheduler(optimizer, warmup=100, max_iters=math.ceil(len(train_dataset)/(batch_size_cls*gradient_accumulation_steps)) *hyperparameters["epochs_cls"])
     wandb.init(project="methyl_cls", config=config)
 
     print(hyperparameters)
@@ -73,7 +73,7 @@ def train(hyperparameters,model = None):
     accuracy_avg = 0.0
     best_val_loss = 1e10
     best_val_acc = 0.0  
-    with tqdm(total=math.ceil(len(train_dataset)/(batch_size*gradient_accumulation_steps)) *hyperparameters["epochs_cls"]) as pbar:
+    with tqdm(total=math.ceil(len(train_dataset)/(batch_size_cls*gradient_accumulation_steps)) *hyperparameters["epochs_cls"]) as pbar:
         for epoch in range(hyperparameters["epochs_cls"]):
             if epoch > 2 and frozen:
                 for name, param in model.named_parameters():

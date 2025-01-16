@@ -13,13 +13,13 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 #non tunable hyperparamters
 batch_size = 32
+batch_size_cls = 8
 gradient_accumulation_steps = 1
 num_classes = 3
 pad_size = 27584
 num_inputs = pad_size
 num_inputs_original = 27578
 seed = 42
-epochs = 10
 folder = "experiment_1"
 
 config = {
