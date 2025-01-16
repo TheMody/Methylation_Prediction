@@ -6,6 +6,8 @@ from config import *
 import xml.etree.ElementTree as ET
 import os.path
 import pickle 
+from tqdm import tqdm
+
 def preprocess_ds(name, interesting_values ):
     dataset_path = "methylation_data/"+name+"_family.xml"
         #read xml file
@@ -49,7 +51,7 @@ def preprocess_ds(name, interesting_values ):
 
 
 class Methylation_ds(torch.utils.data.Dataset):
-    def __init__(self, name = "GSE41037", interesting_values = ["disease"]):
+    def __init__(self, name = "GSE41037", interesting_values = ["disease"], load_into_mem = True):
       #  self.dataset_path = 'methylation_data/GSE41037_family.xml'
        # self.dataset_path = 'methylation_data/GSE41169_family.xml'
         self.dataset_path = "methylation_data/"+name+"_family.xml"
@@ -61,12 +63,20 @@ class Methylation_ds(torch.utils.data.Dataset):
             self.samples = pickle.load(f)
 
         print("length of dataset", len(self.samples))
-        
 
-    def __len__(self):
-        return len(self.samples)
-    
-    def __getitem__(self, idx):
+        self.ds_in_mem = load_into_mem
+        if load_into_mem:
+            if not os.path.isfile("methylation_data/"+name+"_family_preprocessed_ds.pkl"):
+                self.mem_ds = []
+                print("processing dataset")
+                for i in tqdm(range(len(self.samples))):
+                    self.mem_ds.append(self.get_item_internally(i))
+                with open("methylation_data/"+name+"_family_preprocessed_ds.pkl", "wb") as f:
+                    pickle.dump(self.mem_ds, f)
+            else:
+                with open("methylation_data/"+name+"_family_preprocessed_ds.pkl", "rb") as f:
+                    self.mem_ds = pickle.load(f)
+    def get_item_internally(self,idx):
         id = self.samples[idx]["id"]
 
         path_to_sample = self.dataset_path +"/"+ id + "-tbl-1.txt"
@@ -90,6 +100,15 @@ class Methylation_ds(torch.utils.data.Dataset):
         if len(self.interesting_values) == 0:
             return x, torch.tensor(0, dtype=torch.long)
         return x, torch.tensor(self.samples[idx][self.interesting_values[0]], dtype=torch.long) 
+
+    def __len__(self):
+        return len(self.samples)
+    
+    def __getitem__(self, idx):
+        if self.ds_in_mem:
+            return self.mem_ds[idx]
+        else:
+            return self.get_item_internally(idx)
 
 
 if __name__ == "__main__":

@@ -23,7 +23,6 @@ seed = 42
 folder = "experiment_1"
 
 config = {
-    'epochs': epochs,
     "pad_size": pad_size,
     'seed': seed,
     'device': device,
