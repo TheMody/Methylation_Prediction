@@ -9,6 +9,7 @@ from cosine_scheduler import CosineWarmupScheduler
 import time
 from tqdm import tqdm
 import math
+from utils import analyze_predictions, analyze_difference_in_predictions
 
 def lin_reg_baseline(ds, val_ds):
     from sklearn.linear_model import LinearRegression, LogisticRegression
@@ -21,7 +22,7 @@ def lin_reg_baseline(ds, val_ds):
     x = np.stack(x)
     y = np.stack(y)
 
-    reg = LinearRegression()
+    reg = LogisticRegression()
     reg.fit(x, y)
 
     x = []
@@ -34,8 +35,11 @@ def lin_reg_baseline(ds, val_ds):
     y = np.stack(y)
 
     y_pred = reg.predict(x)
+   # print(y_pred)
+    analyze_predictions(y,y_pred)
     acc = np.sum(np.round(y_pred) == y)/len(y)
-    print("linear accuracy on this split", acc)
+    print("logistic regression accuracy on this split", acc)
+    return y_pred
 
 def train(hyperparameters,model = None):
     frozen = True
@@ -54,13 +58,14 @@ def train(hyperparameters,model = None):
                 param.requires_grad = False 
     optimizer = torch.optim.Adam(model.parameters(), lr=hyperparameters["lr_cls"])
     criterion = torch.nn.CrossEntropyLoss()
-    dataset = Methylation_ds()
-    split = int(0.1 * len(dataset))
+    #dataset = Methylation_ds()
+    dataset = Methylation_ds(name = "GPL8490", interesting_values=["disease"])
+    split = int(0.8 * len(dataset))
     
     train_dataset, val_dataset = torch.utils.data.random_split(dataset, [split, len(dataset) - split], generator=torch.Generator().manual_seed(seed))
 
     #lin regression baseline
-    lin_reg_baseline(train_dataset, val_dataset)
+    y_pred_lin = lin_reg_baseline(train_dataset, val_dataset)
 
     dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size_cls, shuffle=True, num_workers=4)
     val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size_cls, shuffle=False, num_workers=4)
@@ -119,17 +124,21 @@ def train(hyperparameters,model = None):
             model.eval()
             with torch.no_grad():
                 log_dict = {}
+                y_preds = []
+                y_gt = []
                 for _, (x, y) in enumerate(val_dataloader):
                     x = x.to(device)
                     y = y.to(device)
-
+                    y_gt.append(y)
                     y_pred = model(x, cls = True)
-
+                    y_preds.append(y_pred)
                     loss = criterion(y_pred, y)
                     avg_acc = y_pred.argmax(dim=1).eq(y).sum().item() / len(y)
                     val_loss += loss.item()
                     val_acc += avg_acc
-            
+                y = torch.cat(y_gt)
+                y_preds = torch.cat(y_preds).argmax(dim=1)
+                analyze_difference_in_predictions(y.cpu().numpy(), y_preds.cpu().numpy(), y_pred_lin, save_name="/accuracy_diff"+str(epoch))
             val_acc /= len(val_dataloader)
             val_loss /= len(val_dataloader)
             if val_loss < best_val_loss:
@@ -139,7 +148,7 @@ def train(hyperparameters,model = None):
             log_dict["val_loss_cls"] = val_loss 
             log_dict["val_accuracy"] = val_acc
             wandb.log(log_dict)
-            print(f"Validation Loss: {val_loss}, Validation Accuracy: {val_acc}")
+            print(f"Validation Loss: {val_loss}, Validation Accuracy: {val_acc} Epoch", epoch)
     wandb.finish()
 
     return best_val_acc
@@ -152,7 +161,7 @@ if __name__ == "__main__":
         "dim_hidden": 256,
         "num_blocks": 4,
         "compression": 32,
-        "model_type": "transformer",
+        "model_type": "mlp",
     }
     train(hyperparameters)
 

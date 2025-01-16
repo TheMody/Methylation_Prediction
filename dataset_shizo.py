@@ -7,6 +7,7 @@ import xml.etree.ElementTree as ET
 import os.path
 import pickle 
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 def preprocess_ds(name, interesting_values ):
     dataset_path = "methylation_data/"+name+"_family.xml"
@@ -27,6 +28,7 @@ def preprocess_ds(name, interesting_values ):
                     for char in sample2:
                         if "Characteristics" in char.tag:
                             for value in interesting_values:
+                              #  print(char.attrib["tag"])
                                 if value in char.attrib["tag"]:
                                     sample[value] = char.text.strip()
             if len(sample) == len(interesting_values) + 1:
@@ -40,13 +42,14 @@ def preprocess_ds(name, interesting_values ):
     for value in interesting_values:
         strtoindex[value] = np.unique([sample[value] for sample in samples]).tolist()
         print(strtoindex[value])
+        print(len(strtoindex[value]))
 
     for sample in samples:
         for value in interesting_values:
             sample[value] = strtoindex[value].index(sample[value])
 
     #save samples using pickle:
-    with open("methylation_data/"+name+"_family.pkl", "wb") as f:
+    with open("methylation_data/"+name+interesting_values[0]+"_family.pkl", "wb") as f:
         pickle.dump(samples, f)
 
 
@@ -57,24 +60,26 @@ class Methylation_ds(torch.utils.data.Dataset):
         self.dataset_path = "methylation_data/"+name+"_family.xml"
         self.interesting_values =interesting_values
         #read xml file
-        if not os.path.isfile("methylation_data/"+name+"_family.pkl"):
+        preprocess_name = "methylation_data/"+name+interesting_values[0]+"_family.pkl"
+        if not os.path.isfile(preprocess_name):
             preprocess_ds(name, interesting_values = interesting_values)
-        with open("methylation_data/"+name+"_family.pkl", "rb") as f:
+        with open(preprocess_name, "rb") as f:
             self.samples = pickle.load(f)
 
         print("length of dataset", len(self.samples))
 
         self.ds_in_mem = load_into_mem
         if load_into_mem:
-            if not os.path.isfile("methylation_data/"+name+"_family_preprocessed_ds.pkl"):
+            full_ds_name = "methylation_data/"+name+interesting_values[0]+"_family_preprocessed_ds.pkl"
+            if not os.path.isfile(full_ds_name):
                 self.mem_ds = []
                 print("processing dataset")
                 for i in tqdm(range(len(self.samples))):
                     self.mem_ds.append(self.get_item_internally(i))
-                with open("methylation_data/"+name+"_family_preprocessed_ds.pkl", "wb") as f:
+                with open(full_ds_name, "wb") as f:
                     pickle.dump(self.mem_ds, f)
             else:
-                with open("methylation_data/"+name+"_family_preprocessed_ds.pkl", "rb") as f:
+                with open(full_ds_name, "rb") as f:
                     self.mem_ds = pickle.load(f)
     def get_item_internally(self,idx):
         id = self.samples[idx]["id"]
@@ -96,7 +101,6 @@ class Methylation_ds(torch.utils.data.Dataset):
         x = torch.tensor(x, dtype=torch.float)
         x = torch.clip(x, 0.0, 1.0)
         x = torch.nn.functional.pad(x, (0, pad_size - len(x)))
-        #print(x.shape)
         if len(self.interesting_values) == 0:
             return x, torch.tensor(0, dtype=torch.long)
         return x, torch.tensor(self.samples[idx][self.interesting_values[0]], dtype=torch.long) 
@@ -112,40 +116,18 @@ class Methylation_ds(torch.utils.data.Dataset):
 
 
 if __name__ == "__main__":
-    ds = Methylation_ds()
- #   print(len(ds))
-
-
-    #split = int(0.9 * len(ds))
-    #train_dataset, val_dataset = torch.utils.data.random_split(ds, [split, len(ds) - split], generator=torch.Generator().manual_seed(seed))
-
-    #calculate baseline using linear regression
-    from sklearn.linear_model import LinearRegression, LogisticRegression
-
-    x = []
-    y = []
-    for i in range(len(ds)):
-        x.append(ds[i][0].numpy())
-        y.append(ds[i][1].numpy())
-
-    x = np.stack(x)
-    y = np.stack(y)
-    # x = x[:100]
-    # y = y[:100]
-
-    from utils import crossvalidate
-    reg = LinearRegression()
-    print("crossvalidated accuracy linear regression:",crossvalidate(reg, x, y))
-
-    reg = LogisticRegression()
-    print("crossvalidated accuracy logistic regression:",crossvalidate(reg, x, y))
-
+    ds = Methylation_ds(name = "GPL8490", interesting_values=["disease"] ,load_into_mem=True)
 
     #calculate proportions of each class
-    ys = [0,0,0]
+    ys = np.zeros(num_classes)
     for x,y in ds:
-        ys[y[0]] += 1
+        ys[y] += 1
+
+    plt.bar(range(num_classes), ys)
+    plt.ylabel("number of samples")
+    plt.xlabel("class")
+    plt.show()
     print(ys)
-    print([y/len(ds) for y in ys])
+    print(ys/len(ds))
         
         

@@ -75,9 +75,9 @@ def pre_train(hyperparameters):
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
                 torch.save(uncompiled_model.state_dict(), folder+"/best_model.pth")
-                print(f"Validation Loss: {val_loss}, Model saved")
+                print(f"Validation Loss: {val_loss}, Model saved Epoch:", epoch)
             else:
-                print(f"Validation Loss: {val_loss}")
+                print(f"Validation Loss: {val_loss} Epoch:", epoch)
 
     #load the best model saved during training
     uncompiled_model.load_state_dict(torch.load(folder+"/best_model.pth",weights_only=True))

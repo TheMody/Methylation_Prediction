@@ -52,7 +52,7 @@ def preprocess_ds(name, interesting_values ):
 
 
 class Methylation_ds(torch.utils.data.Dataset):
-    def __init__(self, name = "GSE41037", interesting_values = ["disease"], load_into_mem = True):
+    def __init__(self, name = "GSE41037", interesting_values = [], load_into_mem = True):
       #  self.dataset_path = 'methylation_data/GSE41037_family.xml'
        # self.dataset_path = 'methylation_data/GSE41169_family.xml'
         self.dataset_path = "methylation_data/"+name+"_family.xml"
