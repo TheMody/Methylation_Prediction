@@ -41,15 +41,23 @@ def lin_reg_baseline(ds, val_ds):
     print("logistic regression accuracy on this split", acc)
     return y_pred
 
-def train(hyperparameters,model = None):
+def train(hyperparameters,model = None, load = False):
     frozen = True
     if model is None:
-        frozen = False
+      # frozen = False
         if hyperparameters["model_type"] == "transformer":
             model = xtransformer(num_classes=num_classes, num_tokens=num_inputs, hidden_dim=hyperparameters["dim_hidden"], n_layers=hyperparameters["num_blocks"], compression=hyperparameters["compression"])
         if hyperparameters["model_type"] == "mlp":
             model = MethylMLP(num_classes=num_classes, num_inputs=num_inputs, num_lin_blocks=hyperparameters["num_blocks"], hidden_dim=hyperparameters["dim_hidden"])
-    model.load_state_dict(torch.load(folder+"/best_model.pth",weights_only=True))
+    if load:
+        checkpoint = torch.load("best_model_GPL470.pth")  
+        # 2. Remove the final layer parameters that have a shape mismatch
+        keys_to_remove = ["out.weight", "out.bias"]
+        for k in keys_to_remove:
+            if k in checkpoint:
+                del checkpoint[k]
+        # 3. Load into your current model
+        model.load_state_dict(checkpoint, strict=False)
     model = model.to(device)
 
     #freeze all parameters except the last layer
@@ -60,7 +68,7 @@ def train(hyperparameters,model = None):
     optimizer = torch.optim.Adam(model.parameters(), lr=hyperparameters["lr_cls"])
     criterion = torch.nn.CrossEntropyLoss()
     #dataset = Methylation_ds()
-    dataset = Methylation_ds(name = "GSE66351", interesting_values=["braak"])
+    dataset = Methylation_ds(name = "GSE13204", interesting_values=["leukemia class"])
     split = int(0.8 * len(dataset))
     
     train_dataset, val_dataset = torch.utils.data.random_split(dataset, [split, len(dataset) - split], generator=torch.Generator().manual_seed(seed))
@@ -159,11 +167,11 @@ if __name__ == "__main__":
     hyperparameters = {
         "lr_cls": 2e-5,
         "epochs_cls": 100,
-        "dim_hidden": 256,
-        "num_blocks": 4,
-        "compression": 512,
+        "dim_hidden": 512,
+        "num_blocks": 8,
+        "compression": 64,
         "model_type": "transformer",
     }
-    train(hyperparameters)
+    train(hyperparameters, load=True)
 
 

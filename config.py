@@ -10,18 +10,20 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # compression = 32
 # model_type  = "transformer"
 # mask_ratio = 0.15
+#running mean tensor([1495.5520, 1878.5018, 1144.4940,  ...,    0.0000,    0.0000,0.0000])
+#running var tensor([1.0979e+03, 1.4760e+03, 8.9545e+02,  ..., 1.0000e+00, 1.0000e+00, 1.0000e+00]) for GSE13204
 
 #non tunable hyperparamters
 batch_size = 16
 batch_size_cls = 8
 gradient_accumulation_steps = 2
-num_classes = 8 #165
+num_classes = 18 #165
 pad_size = 54784#482304 #27584 #
 num_inputs = pad_size
 num_inputs_original = 54675#for gpl570 481868 for 470k illumina#27578  for 27k illumino#
 seed = 42
 folder = "experiment_1"
-path_to_data = "/media/philipkenneweg/Data/datasets/GPL570/" #"methylation_data/"
+path_to_data = "/media/philipkenneweg/Data/datasets/GPL570/" #"methylation_data/"#
 
 config = {
     "pad_size": pad_size,

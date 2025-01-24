@@ -142,15 +142,15 @@ class Methylation_ds(torch.utils.data.Dataset):
         self.running_var[self.running_var == 0] = 1.0
         #check for nan
         self.running_var[torch.isnan(self.running_var)] = 1.0
-        # print("running mean", self.running_mean)
-        # print("running var", self.running_var)
+        print("running mean", self.running_mean)
+        print("running var", self.running_var)
 
         self.ds_in_mem = load_into_mem
         if load_into_mem:
             full_ds_name = "methylation_data/"+name+"_family_preprocessed_ds.pkl"
             if not os.path.isfile(full_ds_name):
                 self.mem_ds = []
-                print("processing dataset")
+                print("loading dataset into memory")
                 for i in tqdm(range(len(self.samples))):
                     self.mem_ds.append(self.get_item_internally(i))
                 with open(full_ds_name, "wb") as f:
