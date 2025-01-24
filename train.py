@@ -49,6 +49,7 @@ def train(hyperparameters,model = None):
             model = xtransformer(num_classes=num_classes, num_tokens=num_inputs, hidden_dim=hyperparameters["dim_hidden"], n_layers=hyperparameters["num_blocks"], compression=hyperparameters["compression"])
         if hyperparameters["model_type"] == "mlp":
             model = MethylMLP(num_classes=num_classes, num_inputs=num_inputs, num_lin_blocks=hyperparameters["num_blocks"], hidden_dim=hyperparameters["dim_hidden"])
+    model.load_state_dict(torch.load(folder+"/best_model.pth",weights_only=True))
     model = model.to(device)
 
     #freeze all parameters except the last layer
@@ -59,7 +60,7 @@ def train(hyperparameters,model = None):
     optimizer = torch.optim.Adam(model.parameters(), lr=hyperparameters["lr_cls"])
     criterion = torch.nn.CrossEntropyLoss()
     #dataset = Methylation_ds()
-    dataset = Methylation_ds(name = "GPL8490", interesting_values=["disease"])
+    dataset = Methylation_ds(name = "GSE66351", interesting_values=["braak"])
     split = int(0.8 * len(dataset))
     
     train_dataset, val_dataset = torch.utils.data.random_split(dataset, [split, len(dataset) - split], generator=torch.Generator().manual_seed(seed))
@@ -160,8 +161,8 @@ if __name__ == "__main__":
         "epochs_cls": 100,
         "dim_hidden": 256,
         "num_blocks": 4,
-        "compression": 32,
-        "model_type": "mlp",
+        "compression": 512,
+        "model_type": "transformer",
     }
     train(hyperparameters)
 

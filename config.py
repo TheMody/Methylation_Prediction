@@ -12,15 +12,16 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # mask_ratio = 0.15
 
 #non tunable hyperparamters
-batch_size = 32
+batch_size = 16
 batch_size_cls = 8
-gradient_accumulation_steps = 1
-num_classes = 165
-pad_size = 27584
+gradient_accumulation_steps = 2
+num_classes = 8 #165
+pad_size = 54784#482304 #27584 #
 num_inputs = pad_size
-num_inputs_original = 27578
+num_inputs_original = 54675#for gpl570 481868 for 470k illumina#27578  for 27k illumino#
 seed = 42
 folder = "experiment_1"
+path_to_data = "/media/philipkenneweg/Data/datasets/GPL570/" #"methylation_data/"
 
 config = {
     "pad_size": pad_size,

@@ -2,7 +2,7 @@ import torch
 from model import MethylMLP, EncoderModelPreTrain, xtransformer
 
 from config import *
-from dataset import Methylation_ds
+from dataset_shizo import Methylation_ds
 import wandb
 from cosine_scheduler import CosineWarmupScheduler
 import time
@@ -15,13 +15,14 @@ def pre_train(hyperparameters):
     model = model.to(device)
     uncompiled_model = model
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=hyperparameters["lr"])
-    dataset = Methylation_ds(name = "GPL8490", interesting_values=[])
+    optimizer = torch.optim.AdamW(model.parameters(), lr=hyperparameters["lr"])
+    #dataset = Methylation_ds(name = "GPL8490", interesting_values=[])
+    dataset = Methylation_ds(name = "GPL570", interesting_values=[],load_into_mem=False)
     split = int(0.95 * len(dataset))
     
     train_dataset, val_dataset = torch.utils.data.random_split(dataset, [split, len(dataset) - split], generator=torch.Generator().manual_seed(seed))
-    dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=4)
+    dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=8)
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=8)
 
     scheduler = CosineWarmupScheduler(optimizer, warmup=300, max_iters=math.ceil(len(train_dataset)/(batch_size*gradient_accumulation_steps)) *hyperparameters["epochs"])
     wandb.init(project="methyl_cls_pretrain", config=config)
@@ -40,11 +41,17 @@ def pre_train(hyperparameters):
                 for micro_step in range(gradient_accumulation_steps):
                     x,_ = next(train_iter)
                     x = x.to(device)
+                    # print(x)
+                    # print(torch.max(x))
+                    # print(torch.min(x))
                     x_pred = model(x, mask_ratio = hyperparameters["mask_ratio"], selfmask = True)
                     loss = model.loss
                     loss = loss/ gradient_accumulation_steps
                     accloss += loss.item()
                     loss.backward()
+
+                #add gradient clipping
+                torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
 
                 optimizer.step()
                 scheduler.step()
@@ -55,7 +62,7 @@ def pre_train(hyperparameters):
                 log_dict["lr"] = optimizer.param_groups[0]["lr"]
 
                 wandb.log(log_dict)
-                loss_avg = 0.99 * loss_avg + 0.01 * accloss
+                loss_avg = 0.99 * loss_avg + (1 - 0.99) * accloss
                 loss_avg_corrected = loss_avg / (1 - 0.99**(pbar.n+1))  
                 pbar.set_description(f"Loss: {loss_avg_corrected}")
                 pbar.update(1)
@@ -86,9 +93,9 @@ def pre_train(hyperparameters):
 if __name__ == "__main__":
     hyperparameters = {
         "lr": 8e-5,
-        "dim_hidden": 256,
-        "num_blocks": 4,
-        "compression": 32,
+        "dim_hidden": 512,
+        "num_blocks": 8,
+        "compression": 64,
         "model_type": "transformer",
         "mask_ratio": 0.15,
         "epochs": 10,

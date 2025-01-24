@@ -44,7 +44,10 @@ class xtransformer(nn.Module):
         self.transformer = Encoder(
         dim = hidden_dim,
         depth = n_layers,
-        heads = hidden_dim//64)
+        heads = hidden_dim//64,)
+      #  use_rmsnorm = True,
+      #  ff_swish = True,
+      #  ff_glu = True)
         self.classification_token = nn.Parameter(torch.Tensor(hidden_dim), requires_grad=True)
         nn.init.uniform_(self.classification_token, a=-1/math.sqrt(hidden_dim), b=1/math.sqrt(hidden_dim))
         self.mask_token = nn.Parameter(torch.Tensor(hidden_dim), requires_grad=True)
@@ -69,7 +72,7 @@ class xtransformer(nn.Module):
         if selfmask:
             x[mask] = self.mask_token
             x = self.transformer(x)
-            x = torch.nn.functional.sigmoid(self.DeEmbeddingLayer(x)).squeeze(-1)
+            x = self.DeEmbeddingLayer(x).squeeze(-1)#torch.nn.functional.sigmoid(
             self.loss = torch.mean(torch.abs(x[pixel_mask]-x_gt))
             return x
         else:
