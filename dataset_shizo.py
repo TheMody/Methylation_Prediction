@@ -7,12 +7,11 @@ from lxml import etree
 import os.path
 import pickle 
 from tqdm import tqdm
-import matplotlib.pyplot as plt
-import subprocess
 import os
 import random
 
 def count_lines_wc(filename):
+    import subprocess
     """Counts lines using the wc -l command."""
     output = subprocess.check_output(['wc', '-l', filename])
     # wc -l output looks like: b'   50000 filename\n'
@@ -27,19 +26,13 @@ def filter_samples_by_line_count_wc(samples, dataset_path, num_inputs_original):
             filtered.append(sample)
     return filtered
 
-control_names = [ '1; control','Control','Nonobese', 'Normal', 'Normal Bone Marrow (control)', 'Normal Lung Tissue sample','Normal adjacent to colorectal adenocarcinoma','Unaffected', 'Unaffected control','adult normal liver', 'control','control (UPPP)', 'control-HPVneg', 'control-HPVpos', 'healthy','healthy control','leukaemia control','non-diabetic', 'non-endometriosis', 'non-small cell lung cancer (NSCLC)', 'none', 'normal','normal adrenal tissue', 'normal brca1 mutation 185 del g', 'normal control', 'normal monozygotic (MZ)', 'normal mucosa','normal/healthy',]
-
 def preprocess_ds(name, interesting_values, clean_names = False ):
     dataset_path = path_to_data+name+"_family.xml"
         #read xml file
     parser = etree.XMLParser(recover=True)  # tries to recover from minor errors
     tree = etree.parse(dataset_path + "/"+name+"_family.xml", parser=parser)
-    # parser = ET.XMLParser(encoding="UTF-8")
-    # tree = ET.parse(dataset_path + "/"+name+"_family.xml", parser = parser)
     root = tree.getroot()
-
     samples = []
-   # interesting_values =interesting_values#["disease"]
 
     for child in root:
         sample = {}
@@ -75,17 +68,6 @@ def preprocess_ds(name, interesting_values, clean_names = False ):
     for sample in samples:
         for value in interesting_values:
             sample[value] = strtoindex[value].index(sample[value])
-    
-    # if clean_names:
-    #     duplicate_ids = []
-    #     for value in interesting_values:
-    #         for name in control_names:
-    #             duplicate_ids.append(strtoindex[value].index(name))
-
-    #     for sample in samples:
-    #         for value in interesting_values:
-    #             if sample[value] in duplicate_ids:
-    #                 sample[value] = duplicate_ids[0]
 
     #save samples using pickle:
     with open("methylation_data/"+name+"_family.pkl", "wb") as f:
@@ -95,8 +77,6 @@ def preprocess_ds(name, interesting_values, clean_names = False ):
 
 class Methylation_ds(torch.utils.data.Dataset):
     def __init__(self, name = "GSE41037", interesting_values = ["disease"], load_into_mem = True, normalize_ds = True):
-      #  self.dataset_path = 'methylation_data/GSE41037_family.xml'
-       # self.dataset_path = 'methylation_data/GSE41169_family.xml'
         self.dataset_path = path_to_data +name+"_family.xml"
         self.interesting_values =interesting_values
         #read xml file
@@ -109,6 +89,7 @@ class Methylation_ds(torch.utils.data.Dataset):
         print("length of dataset", len(self.samples))
 
         if normalize_ds:
+            name = "GPL570" #necessary for GPL570 and GSE13204 to have same preprocessing 
             if os.path.isfile("methylation_data/"+name+"_family_normalization.pkl"):
                 with open("methylation_data/"+name+"_family_normalization.pkl", "rb") as f:
                     running_mean, running_var = pickle.load(f)
@@ -158,12 +139,14 @@ class Methylation_ds(torch.utils.data.Dataset):
             else:
                 with open(full_ds_name, "rb") as f:
                     self.mem_ds = pickle.load(f)
+
+
+
     def get_item_internally(self,idx):
         id = self.samples[idx]["id"]
 
         path_to_sample = self.dataset_path +"/"+ id + "-tbl-1.txt"
 
-       # print(path_to_sample)
         with open(path_to_sample) as f:
             lines = f.readlines()
             x = []
@@ -180,11 +163,9 @@ class Methylation_ds(torch.utils.data.Dataset):
         x[torch.isnan(x)] = 0.0
         if self.normalize_ds:   
             x = (x - self.running_mean)/self.running_var
-            #x = torch.clip(x, 0.0, None)
             #filter for weird outliers
             x[x > 20] = 0.0
             x[x < -20] = 0.0
-      #     x = torch.clip(x, -10.0, 10.0)
         if len(self.interesting_values) == 0:
             return x, torch.tensor(0, dtype=torch.long)
         return x, torch.tensor(self.samples[idx][self.interesting_values[0]], dtype=torch.long) 
@@ -200,6 +181,7 @@ class Methylation_ds(torch.utils.data.Dataset):
 
 
 if __name__ == "__main__":
+    import matplotlib.pyplot as plt
     #ds = Methylation_ds(name = "GPL8490", interesting_values=["disease"] ,load_into_mem=True)
     ds = Methylation_ds(name = "GPL570", interesting_values=[],load_into_mem=False)
     #calculate proportions of each class

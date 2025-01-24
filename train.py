@@ -76,8 +76,8 @@ def train(hyperparameters,model = None, load = False):
     #lin regression baseline
     y_pred_lin = lin_reg_baseline(train_dataset, val_dataset)
 
-    dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size_cls, shuffle=True, num_workers=4)
-    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size_cls, shuffle=False, num_workers=4)
+    dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size_cls, shuffle=True, num_workers=0)
+    val_dataloader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size_cls, shuffle=False, num_workers=0)
 
     scheduler = CosineWarmupScheduler(optimizer, warmup=100, max_iters=math.ceil(len(train_dataset)/(batch_size_cls*gradient_accumulation_steps)) *hyperparameters["epochs_cls"])
     wandb.init(project="methyl_cls", config=config)

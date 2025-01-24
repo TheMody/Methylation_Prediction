@@ -12,7 +12,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # mask_ratio = 0.15
 #running mean tensor([1495.5520, 1878.5018, 1144.4940,  ...,    0.0000,    0.0000,0.0000])
 #running var tensor([1.0979e+03, 1.4760e+03, 8.9545e+02,  ..., 1.0000e+00, 1.0000e+00, 1.0000e+00]) for GSE13204
-
+#running mean tensor([444.7763, 444.3635, 282.9825,  ...,   0.0000,   0.0000,   0.0000])
+#running var tensor([1.9517e+03, 2.5516e+03, 2.1031e+03,  ..., 1.0000e+00, 1.0000e+00,1.0000e+00]) for whole gpl570
 #non tunable hyperparamters
 batch_size = 16
 batch_size_cls = 8
